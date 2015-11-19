@@ -34,7 +34,7 @@
   "readme": "# react-native-vectordrawable-android\nReact native vectordrawable enables you to use vector for android.\n",
   "readmeFilename": "README.md",
   "_id": "react-native-vectordrawable-android@1.0.0",
-  "_shasum": "fb920cc134f924c40bb91e2af8a9e09e0c2e943e",
+  "_shasum": "5467808db2675ae6a69f73dcb0a8989ff319bead",
   "_from": "git+ssh://git@github.com/Upinion/react-native-vectordrawable-android.git",
-  "_resolved": "git+ssh://git@github.com/Upinion/react-native-vectordrawable-android.git#d9db57bf388fc04aa7e6dc668989b7b8dfc952b0"
+  "_resolved": "git+ssh://git@github.com/Upinion/react-native-vectordrawable-android.git#0c4b9e0cbdd1d82ef6eb8fed8e57699149a056a3"
 }

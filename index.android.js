@@ -3,7 +3,8 @@ var { requireNativeComponent, PropTypes } = require('react-native');
 var iface = {
     name: 'VectorDrawableView',
     propTypes: {
-        resourceName: PropTypes.string
+        resourceName: PropTypes.string,
+        animations: PropTypes.array
     }
 };
 
