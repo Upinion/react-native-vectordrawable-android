@@ -1,2 +1,2 @@
-rootProject.name = 'reactcircleview'
+rootProject.name = 'reactVectorDrawable'
 include ':app'
