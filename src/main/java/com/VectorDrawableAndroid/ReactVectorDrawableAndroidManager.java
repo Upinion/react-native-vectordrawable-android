@@ -53,7 +53,9 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
         BaseViewPropertyApplicator.applyCommonViewProperties(view, props);
 
         Integer resourceIdent;
-        if(!props.hasKey(PROP_RES) || (resourceIdent = view.getContext().getResources().getIdentifier( props.getString(PROP_RES), "drawable", view.getContext().getPackageName())) == 0 )
+        if(!props.hasKey(PROP_RES))
+            return;
+        if( (resourceIdent = view.getContext().getResources().getIdentifier( props.getString(PROP_RES), "drawable", view.getContext().getPackageName())) == 0 )
             throw new JavascriptException("No valid resourceName");
 
         ImageView img = new ImageView(view.getContext());
