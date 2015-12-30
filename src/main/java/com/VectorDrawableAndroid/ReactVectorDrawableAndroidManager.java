@@ -63,8 +63,8 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
 
         ImageView img = new ImageView(view.getContext());
         Drawable draw;
-        //Fix bug with Android 5.0 crashing
-        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.LOLLIPOP)
+        //Fix bug with Animations in Android >= 5.0
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             draw = ResourcesCompat.getDrawable(view.getContext(), resourceIdent);
         else{
             try {
@@ -92,7 +92,7 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
                         throw new JavascriptException("Invalid resourceAnimation");
                     else {
                         Animator animation;
-                        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP && ((AnimatedVectorDrawable) img.getDrawable()).isPath(targetName)){
+                        if (((AnimatedVectorDrawable) img.getDrawable()).isPath(targetName)){
                             Float pathError;
                             try {
                                 Field auxf = AnimatedVectorDrawable.class.getDeclaredField("mAnimatedVectorState");
@@ -152,21 +152,10 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
      */
     private void addAnimator (AnimatedVectorDrawable draw, String targetName, Animator animation) {
         try {
-            //Android 6.0
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Field auxf = AnimatedVectorDrawable.class.getDeclaredField("mAnimatedVectorState");
-                auxf.setAccessible(true);
-                Object privateObject = auxf.get(draw);
-                Class privateClass = privateObject.getClass();
+            Method auxM = draw.getClass().getDeclaredMethod("setupAnimatorsForTarget", String.class, Animator.class);
+            auxM.setAccessible(true);
+            auxM.invoke(draw, targetName, animation);
 
-                Method auxM = privateClass.getDeclaredMethod("addTargetAnimator", String.class, Animator.class);
-                auxM.setAccessible(true);
-                auxM.invoke(privateObject, targetName, animation);
-            }else {
-                Method auxM = draw.getClass().getDeclaredMethod("setupAnimatorsForTarget", String.class, Animator.class);
-                auxM.setAccessible(true);
-                auxM.invoke(draw, targetName, animation);
-            }
         } catch (Exception e) {
             throw new JavascriptException(e.toString());
         }
