@@ -1,6 +1,15 @@
 # react-native-vectordrawable-android
 React native vectordrawable enables you to use vector for android.
 
+### Important Notes
+```
+In order to work on Android < 5.0 implementation has been changed to use Vector-compat,
+instead of native VectorDrawable.
+
+Read carefully about the XML syntax needed for vector-compat compatibility.
+```
+https://github.com/wnafee/vector-compat
+
 ### Installation
 
 ```bash
