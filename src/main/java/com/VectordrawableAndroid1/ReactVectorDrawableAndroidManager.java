@@ -1,4 +1,4 @@
-package com.upinion.VectorDrawableAndroid;
+package com.upinion.VectordrawableAndroid;
 
 import android.util.Log;
 import android.widget.ImageView;

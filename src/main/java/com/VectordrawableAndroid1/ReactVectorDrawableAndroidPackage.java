@@ -1,4 +1,4 @@
-package com.upinion.VectorDrawableAndroid;
+package com.upinion.VectordrawableAndroid;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
