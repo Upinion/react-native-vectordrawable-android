@@ -13,12 +13,15 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.os.Build;
 
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.uimanager.BaseViewPropertyApplicator;
 import com.facebook.react.uimanager.CatalystStylesDiffMap;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIProp;
 import com.facebook.react.uimanager.ViewManager;
+import com.facebook.react.uimanager.ReactProp;
+import com.facebook.react.uimanager.ReactPropGroup;
 import com.facebook.react.views.text.ReactTextShadowNode;
 import com.facebook.react.modules.core.JavascriptException;
 
@@ -30,9 +33,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class ReactVectorDrawableAndroidManager extends ViewGroupManager<RelativeLayout> {
     public static final String REACT_CLASS = "RCTVectorDrawableView";
+    private ImageView img;
 
     @UIProp(UIProp.Type.STRING)
     public static final String PROP_RES = "resourceName";
@@ -50,19 +55,14 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
         return res;
     }
 
-    @Override
-    public void updateView(final RelativeLayout view,
-                           final CatalystStylesDiffMap props) {
-        BaseViewPropertyApplicator.applyCommonViewProperties(view, props);
-
-        Integer resourceIdent;
-        if(!props.hasKey(PROP_RES))
-            return;
-        if( (resourceIdent = view.getContext().getResources().getIdentifier( props.getString(PROP_RES), "drawable", view.getContext().getPackageName())) == 0 )
+    @ReactProp(name = "resourceName")
+    public void setResourceName(RelativeLayout view, @Nullable String resourceName) {
+        if( (resourceIdent = view.getContext().getResources().getIdentifier( resourceName, "drawable", view.getContext().getPackageName())) == 0 )
             throw new JavascriptException("No valid resourceName");
 
-        ImageView img = new ImageView(view.getContext());
+        img = new ImageView(view.getContext());
         Drawable draw;
+
         //Fix bug with Animations in Android >= 5.0
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             draw = ResourcesCompat.getDrawable(view.getContext(), resourceIdent);
@@ -78,30 +78,34 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
             }
         }
         img.setImageDrawable(draw);
+        view.addView(img, 0);
+    }
 
-        if(img.getDrawable() instanceof AnimatedVectorDrawable && props.hasKey(PROP_ANI) && props.getArray(PROP_ANI).size() > 0){
-            for( int i = 0; i < props.getArray(PROP_ANI).size(); i++) {
-                String targetName = props.getArray(PROP_ANI).getMap(i).getString("targetName");
+    @ReactProp(name = "animations")
+    public void setAnimations(RelativeLayout view, @Nullable ReadableArray ani) {
+        if (img.getDrawable() instanceof AnimatedVectorDrawable && ani.size() > 0) {
+            for (int i = 0; i < ani.size(); i++) {
+                String targetName = ani.getMap(i).getString("targetName");
 
-                if(props.getArray(PROP_ANI).getMap(i).hasKey("resourceAnimation") && props.getArray(PROP_ANI).getMap(i).hasKey("propertyName"))
+                if (ani.getMap(i).hasKey("resourceAnimation") && ani.getMap(i).hasKey("propertyName"))
                     throw new JavascriptException("You cannot use resourceAnimation and propertyName at the same time");
 
-                if(props.getArray(PROP_ANI).getMap(i).hasKey("resourceAnimation")) {
+                if (ani.getMap(i).hasKey("resourceAnimation")) {
                     Integer resourceAnimation;
-                    if( (resourceAnimation = view.getContext().getResources().getIdentifier( props.getArray(PROP_ANI).getMap(i).getString("resourceAnimation"), "anim", view.getContext().getPackageName())) == 0 )
+                    if ((resourceAnimation = view.getContext().getResources().getIdentifier(ani.getMap(i).getString("resourceAnimation"), "anim", view.getContext().getPackageName())) == 0)
                         throw new JavascriptException("Invalid resourceAnimation");
                     else {
                         Animator animation;
-                        if (((AnimatedVectorDrawable) img.getDrawable()).isPath(targetName)){
+                        if (((AnimatedVectorDrawable) img.getDrawable()).isPath(targetName)) {
                             Float pathError;
                             try {
                                 Field auxf = AnimatedVectorDrawable.class.getDeclaredField("mAnimatedVectorState");
                                 auxf.setAccessible(true);
-                                Object privateObject = auxf.get((AnimatedVectorDrawable)img.getDrawable());
+                                Object privateObject = auxf.get((AnimatedVectorDrawable) img.getDrawable());
 
                                 auxf = privateObject.getClass().getDeclaredField("mVectorDrawable");
                                 auxf.setAccessible(true);
-                                VectorDrawable vdraw = (VectorDrawable)auxf.get(privateObject);
+                                VectorDrawable vdraw = (VectorDrawable) auxf.get(privateObject);
                                 pathError = vdraw.getPixelSize();
 
                             } catch (Exception e) {
@@ -109,43 +113,137 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
                             }
 
                             animation = PathAnimatorInflater.loadAnimator(view.getContext(), view.getContext().getResources(), null, resourceAnimation, pathError);
-                        }else{
+                        } else {
                             animation = AnimatorInflater.loadAnimator(view.getContext(), resourceAnimation);
                         }
-                        addAnimator((AnimatedVectorDrawable)img.getDrawable(), targetName, animation);
+                        addAnimator((AnimatedVectorDrawable) img.getDrawable(), targetName, animation);
                     }
-                }else if(props.getArray(PROP_ANI).getMap(i).hasKey("propertyName")) {
-                    if(!(props.getArray(PROP_ANI).getMap(i).hasKey("propertyName") &&
-                            props.getArray(PROP_ANI).getMap(i).hasKey("duration") &&
-                            props.getArray(PROP_ANI).getMap(i).hasKey("valueType")))
+                } else if (ani.getMap(i).hasKey("propertyName")) {
+                    if (!(ani.getMap(i).hasKey("propertyName") &&
+                            ani.getMap(i).hasKey("duration") &&
+                            ani.getMap(i).hasKey("valueType")))
                         throw new JavascriptException("Missing Props");
-                    String propertyName = props.getArray(PROP_ANI).getMap(i).getString("propertyName");
-                    Integer duration = props.getArray(PROP_ANI).getMap(i).getInt("duration");
-                    String valueType = props.getArray(PROP_ANI).getMap(i).getString("valueType");
+                    String propertyName = ani.getMap(i).getString("propertyName");
+                    Integer duration = ani.getMap(i).getInt("duration");
+                    String valueType = ani.getMap(i).getString("valueType");
 
                     ObjectAnimator animation;
 
-                    if (valueType.equals("pathType")){
+                    if (valueType.equals("pathType")) {
                         //TODO ? Create ObjectAnimator using path
-                    }else {
-                        Integer valueFrom = props.getArray(PROP_ANI).getMap(i).getInt("valueFrom");
-                        Integer valueTo = props.getArray(PROP_ANI).getMap(i).getInt("valueTo");
+                    } else {
+                        Integer valueFrom = ani.getMap(i).getInt("valueFrom");
+                        Integer valueTo = ani.getMap(i).getInt("valueTo");
                         animation = ObjectAnimator.ofFloat(null, propertyName, valueFrom, valueTo);
 
                         animation.setDuration(duration);
                         animation.setInterpolator(new AccelerateDecelerateInterpolator());
 
-                        addAnimator((AnimatedVectorDrawable)img.getDrawable(), targetName, animation);
+                        addAnimator((AnimatedVectorDrawable) img.getDrawable(), targetName, animation);
                     }
                 }
             }
+            if(img.getDrawable() instanceof AnimatedVectorDrawable)
+                ((Animatable)img.getDrawable()).start();
         }
-        view.addView(img, 0);
-        if(img.getDrawable() instanceof AnimatedVectorDrawable && props.hasKey(PROP_ANI) && props.getArray(PROP_ANI).size() > 0)
-            ((Animatable)img.getDrawable()).start();
-
-        super.updateView(view, props);
     }
+
+//    @Override
+//    public void updateView(final RelativeLayout view,
+//                           final CatalystStylesDiffMap props) {
+//        BaseViewPropertyApplicator.applyCommonViewProperties(view, props);
+//
+//        Integer resourceIdent;
+//        if(!props.hasKey(PROP_RES))
+//            return;
+//        if( (resourceIdent = view.getContext().getResources().getIdentifier( props.getString(PROP_RES), "drawable", view.getContext().getPackageName())) == 0 )
+//            throw new JavascriptException("No valid resourceName");
+//
+//        img = new ImageView(view.getContext());
+//        Drawable draw;
+//        //Fix bug with Animations in Android >= 5.0
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+//            draw = ResourcesCompat.getDrawable(view.getContext(), resourceIdent);
+//        else{
+//            try {
+//                draw = VectorDrawable.getDrawable(view.getContext(), resourceIdent);
+//            } catch (IllegalArgumentException e1) {
+//                try {
+//                    draw = AnimatedVectorDrawable.getDrawable(view.getContext(), resourceIdent);
+//                } catch (IllegalArgumentException e2) {
+//                    throw new JavascriptException(e2.toString());
+//                }
+//            }
+//        }
+//        img.setImageDrawable(draw);
+//
+//        if(img.getDrawable() instanceof AnimatedVectorDrawable && props.hasKey(PROP_ANI) && props.getArray(PROP_ANI).size() > 0){
+//            for( int i = 0; i < props.getArray(PROP_ANI).size(); i++) {
+//                String targetName = props.getArray(PROP_ANI).getMap(i).getString("targetName");
+//
+//                if(props.getArray(PROP_ANI).getMap(i).hasKey("resourceAnimation") && props.getArray(PROP_ANI).getMap(i).hasKey("propertyName"))
+//                    throw new JavascriptException("You cannot use resourceAnimation and propertyName at the same time");
+//
+//                if(props.getArray(PROP_ANI).getMap(i).hasKey("resourceAnimation")) {
+//                    Integer resourceAnimation;
+//                    if( (resourceAnimation = view.getContext().getResources().getIdentifier( props.getArray(PROP_ANI).getMap(i).getString("resourceAnimation"), "anim", view.getContext().getPackageName())) == 0 )
+//                        throw new JavascriptException("Invalid resourceAnimation");
+//                    else {
+//                        Animator animation;
+//                        if (((AnimatedVectorDrawable) img.getDrawable()).isPath(targetName)){
+//                            Float pathError;
+//                            try {
+//                                Field auxf = AnimatedVectorDrawable.class.getDeclaredField("mAnimatedVectorState");
+//                                auxf.setAccessible(true);
+//                                Object privateObject = auxf.get((AnimatedVectorDrawable)img.getDrawable());
+//
+//                                auxf = privateObject.getClass().getDeclaredField("mVectorDrawable");
+//                                auxf.setAccessible(true);
+//                                VectorDrawable vdraw = (VectorDrawable)auxf.get(privateObject);
+//                                pathError = vdraw.getPixelSize();
+//
+//                            } catch (Exception e) {
+//                                throw new JavascriptException(e.toString());
+//                            }
+//
+//                            animation = PathAnimatorInflater.loadAnimator(view.getContext(), view.getContext().getResources(), null, resourceAnimation, pathError);
+//                        }else{
+//                            animation = AnimatorInflater.loadAnimator(view.getContext(), resourceAnimation);
+//                        }
+//                        addAnimator((AnimatedVectorDrawable)img.getDrawable(), targetName, animation);
+//                    }
+//                }else if(props.getArray(PROP_ANI).getMap(i).hasKey("propertyName")) {
+//                    if(!(props.getArray(PROP_ANI).getMap(i).hasKey("propertyName") &&
+//                            props.getArray(PROP_ANI).getMap(i).hasKey("duration") &&
+//                            props.getArray(PROP_ANI).getMap(i).hasKey("valueType")))
+//                        throw new JavascriptException("Missing Props");
+//                    String propertyName = props.getArray(PROP_ANI).getMap(i).getString("propertyName");
+//                    Integer duration = props.getArray(PROP_ANI).getMap(i).getInt("duration");
+//                    String valueType = props.getArray(PROP_ANI).getMap(i).getString("valueType");
+//
+//                    ObjectAnimator animation;
+//
+//                    if (valueType.equals("pathType")){
+//                        //TODO ? Create ObjectAnimator using path
+//                    }else {
+//                        Integer valueFrom = props.getArray(PROP_ANI).getMap(i).getInt("valueFrom");
+//                        Integer valueTo = props.getArray(PROP_ANI).getMap(i).getInt("valueTo");
+//                        animation = ObjectAnimator.ofFloat(null, propertyName, valueFrom, valueTo);
+//
+//                        animation.setDuration(duration);
+//                        animation.setInterpolator(new AccelerateDecelerateInterpolator());
+//
+//                        addAnimator((AnimatedVectorDrawable)img.getDrawable(), targetName, animation);
+//                    }
+//                }
+//            }
+//        }
+//        view.addView(img, 0);
+//        if(img.getDrawable() instanceof AnimatedVectorDrawable && props.hasKey(PROP_ANI) && props.getArray(PROP_ANI).size() > 0)
+//            ((Animatable)img.getDrawable()).start();
+//
+//        super.updateView(view, props);
+//    }
 
     /*
      * Use reflection for adding an animator to an AnimatedVectorDrawable
