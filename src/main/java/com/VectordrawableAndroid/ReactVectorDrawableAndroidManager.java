@@ -14,6 +14,7 @@ import android.os.Build;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.uimanager.BaseViewPropertyApplicator;
 import com.facebook.react.uimanager.CatalystStylesDiffMap;
 import com.facebook.react.uimanager.ViewGroupManager;
@@ -37,12 +38,11 @@ import javax.annotation.Nullable;
 
 public class ReactVectorDrawableAndroidManager extends ViewGroupManager<RelativeLayout> {
     public static final String REACT_CLASS = "RCTVectorDrawableView";
-    private ImageView img;
 
     @UIProp(UIProp.Type.STRING)
     public static final String PROP_RES = "resourceName";
     @UIProp(UIProp.Type.ARRAY)
-    public static final String PROP_ANI = "animations";
+    public static final String PROP_VANI = "vectorAnimation";
 
     @Override
     public String getName() {
@@ -55,14 +55,23 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
         return res;
     }
 
-    @ReactProp(name = "resourceName")
+    @ReactProp(name = PROP_RES)
     public void setResourceName(RelativeLayout view, @Nullable String resourceName) {
+        ImageView img = new ImageView(view.getContext());
+        Drawable draw = createVectorDrawable(view, resourceName);
+        img.setImageDrawable(draw);
+        if (img.getDrawable() instanceof AnimatedVectorDrawable){
+            throw new JavascriptException("Cant use AnimatedVector in resourceName");
+        }
+        view.addView(img, 0);
+    }
+
+    private Drawable createVectorDrawable(RelativeLayout view, String resourceName) throws JavascriptException{
+        int resourceIdent;
         if( (resourceIdent = view.getContext().getResources().getIdentifier( resourceName, "drawable", view.getContext().getPackageName())) == 0 )
-            throw new JavascriptException("No valid resourceName");
+            throw new JavascriptException("Invalid resourceName");
 
-        img = new ImageView(view.getContext());
         Drawable draw;
-
         //Fix bug with Animations in Android >= 5.0
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
             draw = ResourcesCompat.getDrawable(view.getContext(), resourceIdent);
@@ -77,13 +86,21 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
                 }
             }
         }
-        img.setImageDrawable(draw);
-        view.addView(img, 0);
+        return draw;
     }
 
-    @ReactProp(name = "animations")
-    public void setAnimations(RelativeLayout view, @Nullable ReadableArray ani) {
-        if (img.getDrawable() instanceof AnimatedVectorDrawable && ani.size() > 0) {
+    @ReactProp(name = PROP_VANI)
+    public void setVectorAnimations(RelativeLayout view, @Nullable ReadableMap arr) {
+        if(!arr.hasKey("resourceName") || !arr.hasKey("animations"))
+            throw new JavascriptException("Invalid props");
+
+        ReadableArray ani = arr.getArray("animations");
+        String resourceName = arr.getString("resourceName");
+        ImageView img = new ImageView(view.getContext());
+        Drawable draw = createVectorDrawable(view, resourceName);
+        img.setImageDrawable(draw);
+
+        if (img != null && img.getDrawable() instanceof AnimatedVectorDrawable && ani.size() > 0) {
             for (int i = 0; i < ani.size(); i++) {
                 String targetName = ani.getMap(i).getString("targetName");
 
@@ -143,8 +160,8 @@ public class ReactVectorDrawableAndroidManager extends ViewGroupManager<Relative
                     }
                 }
             }
-            if(img.getDrawable() instanceof AnimatedVectorDrawable)
-                ((Animatable)img.getDrawable()).start();
+            view.addView(img, 0);
+            ((Animatable)img.getDrawable()).start();
         }
     }
 
