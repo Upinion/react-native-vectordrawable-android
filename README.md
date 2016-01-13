@@ -92,24 +92,26 @@ Create your own animation. (you can add as many as you want)
 
 ```javascript
 <VectorDrawableView
-    resourceName={'resourceNameofDrawable'}
     style={{height: 180, width: 180}}
-    animations={[
-        {
-            targetName: "NameOfTargetElement",
-            propertyName: "NameOfPropertyToChange",
-            duration: 1000, //miliseconds
-            valueFrom: 0, //number
-            valueTo: 10 //number
-        },
-        {
-            targetName: "NameOfTargetElement2",
-            propertyName: "NameOfPropertyToChange2",
-            duration: 1000, //miliseconds
-            valueFrom: 0, //number
-            valueTo: 10 //number
-        }
-    ]}
+    vectorAnimation={{
+        resourceName: 'resourceNameofDrawable',
+        animations: [
+            {
+                targetName: "NameOfTargetElement",
+                propertyName: "NameOfPropertyToChange",
+                duration: 1000, //miliseconds
+                valueFrom: 0, //number
+                valueTo: 10 //number
+            },
+            {
+                targetName: "NameOfTargetElement2",
+                propertyName: "NameOfPropertyToChange2",
+                duration: 1000, //miliseconds
+                valueFrom: 0, //number
+                valueTo: 10 //number
+            }
+        ]
+    }}
 />
 ```
 
@@ -117,17 +119,19 @@ Use your own `res/anim` Animation resources.
 
 ```javascript
 <VectorDrawableView
-    resourceName={'resourceNameofDrawable'}
     style={{height: 180, width: 180}}
-    animations={[
-        {
-            targetName: "NameOfTargetElement",
-            resourceName: "NameofAnimationResource"
-        },
-        {
-            targetName: "NameOfTargetElement2",
-            resourceName: "NameOfAnimationResource2"
-        }
-    ]}
+    vectorAnimation={{
+        resourceName: 'resourceNameofDrawable',
+        animations: [
+            {
+                targetName: "NameOfTargetElement",
+                resourceName: "NameofAnimationResource"
+            },
+            {
+                targetName: "NameOfTargetElement2",
+                resourceName: "NameOfAnimationResource2"
+            }
+        ]
+    }}
 />
 ```
