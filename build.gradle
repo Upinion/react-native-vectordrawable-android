@@ -13,6 +13,6 @@ android {
 }
 
 dependencies {
-    compile 'com.facebook.react:react-native:0.17.+'
+    compile 'com.facebook.react:react-native:0.19.+'
     compile 'com.wnafee:vector-compat:1.0.5'
 }
