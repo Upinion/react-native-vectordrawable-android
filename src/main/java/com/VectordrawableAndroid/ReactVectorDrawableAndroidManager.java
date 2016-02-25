@@ -21,8 +21,7 @@ import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIProp;
 import com.facebook.react.uimanager.ViewManager;
-import com.facebook.react.uimanager.ReactProp;
-import com.facebook.react.uimanager.ReactPropGroup;
+import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.views.text.ReactTextShadowNode;
 import com.facebook.react.modules.core.JavascriptException;
 
