@@ -1,6 +1,6 @@
 {
   "name": "react-native-vectordrawable-android",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Use android vectorDrawable in Android",
   "main": "index.android.js",
   "scripts": {
