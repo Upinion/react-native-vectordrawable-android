@@ -1,4 +1,5 @@
-var { requireNativeComponent, PropTypes } = require('react-native');
+var {PropTypes} = require('react');
+var { requireNativeComponent} = require('react-native');
 
 var iface = {
     name: 'VectorDrawableView',
